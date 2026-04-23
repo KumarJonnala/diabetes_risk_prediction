@@ -1,1 +1,34 @@
+# PDFs (existing rule — keep)
 *.pdf
+
+# Python environments
+.venv/
+env/
+venv/
+
+# Byte-compiled
+__pycache__/
+*.py[cod]
+*$py.class
+
+# MLflow local tracking store & artifacts
+mlruns/
+mlartifacts/
+
+# Saved model artifacts (we'll version via MLflow, not git)
+models/*.joblib
+models/*.pkl
+models/*.onnx
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Test + coverage
+.pytest_cache/
+.coverage
+htmlcov/
