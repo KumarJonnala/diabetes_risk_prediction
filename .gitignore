@@ -1,4 +1,4 @@
-# PDFs (existing rule — keep)
+# PDFs
 *.pdf
 
 # Python environments
@@ -8,8 +8,6 @@ venv/
 
 # Byte-compiled
 __pycache__/
-*.py[cod]
-*$py.class
 
 # MLflow local tracking store & artifacts
 mlruns/
@@ -22,13 +20,3 @@ models/*.onnx
 
 # Jupyter checkpoints
 .ipynb_checkpoints/
-
-# OS / editor
-.DS_Store
-.vscode/
-.idea/
-
-# Test + coverage
-.pytest_cache/
-.coverage
-htmlcov/

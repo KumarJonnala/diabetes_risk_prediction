@@ -9,8 +9,8 @@ Goal: train a model, track experiments, register the best version, and serve it 
 diabetes_risk_prediction/
 ├── configs/
 │   └── config.yaml          # Single source of paths & hyperparams
-├── dataset/
-│   └── diabetes.csv         # Raw dataset (~253k rows)
+├── data/
+│   └── diabetes.csv         # Raw dataset (~253k rows, CDC BRFSS)
 ├── documents/               # Project brief PDFs (reference)
 ├── src/
 │   ├── __init__.py

@@ -1,7 +1,17 @@
+# API
 fastapi
 uvicorn[standard]
+
+# Data + ML
 numpy
 pandas
 scikit-learn
 matplotlib
 seaborn
+joblib
+
+# Experiment tracking
+mlflow
+
+# Config
+pyyaml
