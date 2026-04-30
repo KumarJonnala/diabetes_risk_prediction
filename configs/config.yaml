@@ -29,7 +29,7 @@ model:
     random_state: 12
 
 mlflow:
-  tracking_uri: sqlite:///mlflow.db
+  tracking_uri: http://localhost:5001
   experiment_name: diabetes-risk
   registered_model_name: DiabetesRiskModel
 
