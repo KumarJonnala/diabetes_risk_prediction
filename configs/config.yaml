@@ -1,0 +1,39 @@
+model:
+  type: random_forest
+
+  random_forest:
+    n_estimators: 300
+    max_depth: 12
+    min_samples_split: 20
+    min_samples_leaf: 8
+    class_weight: balanced_subsample
+    random_state: 12
+
+  logistic_regression:
+    C: 1.0
+    max_iter: 1000
+    class_weight: balanced
+    random_state: 12
+
+  decision_tree:
+    max_depth: 8
+    min_samples_split: 20
+    min_samples_leaf: 10
+    class_weight: balanced
+    random_state: 12
+
+  xgboost:
+    n_estimators: 200
+    max_depth: 6
+    learning_rate: 0.1
+    random_state: 12
+
+mlflow:
+  tracking_uri: sqlite:///mlflow.db
+  experiment_name: diabetes-risk
+  registered_model_name: DiabetesRiskModel
+
+data:
+  processed_path: data/diabetes_processed.csv
+  test_size: 0.2
+  random_state: 12
