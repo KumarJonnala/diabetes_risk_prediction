@@ -16,6 +16,7 @@ __pycache__/
 mlruns/
 mlartifacts/
 mlflow.db
+mlflow_data/
 
 # Saved model artifacts 
 models/*.joblib
