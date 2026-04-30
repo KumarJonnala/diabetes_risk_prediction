@@ -1,5 +1,8 @@
-# PDFs
-*.pdf
+# docs
+documents/
+
+# OS
+.DS_Store
 
 # Python environments
 .venv/
@@ -12,8 +15,9 @@ __pycache__/
 # MLflow local tracking store & artifacts
 mlruns/
 mlartifacts/
+mlflow.db
 
-# Saved model artifacts (we'll version via MLflow, not git)
+# Saved model artifacts 
 models/*.joblib
 models/*.pkl
 models/*.onnx
