@@ -1,5 +1,13 @@
 # docs
 documents/
+reports/
+
+# data
+*.csv
+data/diabetes.json
+
+# DVC local remote
+.dvc_remote/
 
 # OS
 .DS_Store
