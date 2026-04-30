@@ -9,9 +9,13 @@ scikit-learn
 matplotlib
 seaborn
 joblib
+xgboost
 
 # Experiment tracking
 mlflow
 
 # Config
 pyyaml
+
+# Testing
+pytest
