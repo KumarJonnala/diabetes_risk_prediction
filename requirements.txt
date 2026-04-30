@@ -3,6 +3,7 @@ fastapi
 uvicorn[standard]
 
 # Data + ML
+dvc
 numpy
 pandas
 scikit-learn
