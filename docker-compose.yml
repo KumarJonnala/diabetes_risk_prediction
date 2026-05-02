@@ -1,12 +1,42 @@
 services:
+
   mlflow:
     image: ghcr.io/mlflow/mlflow
     ports:
       - "5001:5000"
     volumes:
       - ./mlflow_data:/mlflow
-    command: >
-      mlflow server
-      --host 0.0.0.0
-      --backend-store-uri sqlite:////mlflow/mlflow.db
-      --artifacts-destination /mlflow
+    command:
+      - mlflow
+      - server
+      - --host
+      - "0.0.0.0"
+      - --backend-store-uri
+      - sqlite:////mlflow/mlflow.db
+      - --artifacts-destination
+      - /mlflow
+      - --serve-artifacts
+      - --allowed-hosts
+      - "*"
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    depends_on:
+      - mlflow
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://api:8000/predict
+    depends_on:
+      - api
