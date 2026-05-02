@@ -2,6 +2,10 @@
 fastapi
 uvicorn[standard]
 
+# Frontend
+streamlit
+requests
+
 # Data + ML
 dvc
 numpy
