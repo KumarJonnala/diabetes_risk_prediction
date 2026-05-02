@@ -43,7 +43,7 @@ with mlflow.start_run(run_name=MODEL):
     mlflow.log_metrics(metrics)
     mlflow.sklearn.log_model(
         model,
-        name="model",
+        artifact_path="model",
         registered_model_name=cfg["mlflow"]["registered_model_name"],
     )
 
