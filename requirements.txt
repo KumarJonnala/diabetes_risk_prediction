@@ -22,6 +22,10 @@ mlflow
 # Config
 pyyaml
 
+# Database
+psycopg2-binary
+sqlalchemy
+
 # Testing
 pytest
 httpx
