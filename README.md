@@ -43,10 +43,15 @@ diabetes_risk_prediction/
 │   ├── preprocess.py         # clean_data() + make_target()
 │   ├── features.py           # engineer_features() — adds BMI_cat
 │   └── evaluate.py           # compute_metrics() — accuracy, F1, ROC AUC
+├── tests/
+│   ├── __init__.py
+│   ├── test_features.py      # unit tests for bmi_category + engineer_features
+│   ├── test_preprocess.py    # unit tests for clean_data + make_target
+│   └── test_api.py           # API contract tests via FastAPI TestClient (MLflow mocked)
 ├── train.py                  # config-driven training + MLflow tracking + auto-registration
 ├── .dvc/                     # DVC config and cache
 ├── docker-compose.yml        # all services: MLflow + FastAPI + Streamlit
-├── mlflow_data/              # MLflow DB + artifacts
+├── mlflow_data/              # MLflow DB + artifacts (gitignored, persists across restarts)
 ├── requirements.txt
 ├── .gitignore
 └── README.md
@@ -119,6 +124,15 @@ dvc status
 
 Local remote is stored in `.dvc_remote/` (gitignored). To switch to sotorage for CI/CD, update `.dvc/config`.
 
+### Run tests
+```bash
+python -m pytest tests/ -v
+```
+13 tests across three files — no MLflow connection or data files required:
+- `test_features.py` — unit tests for BMI categorisation and feature engineering
+- `test_preprocess.py` — unit tests for data cleaning and target creation
+- `test_api.py` — API contract tests using FastAPI TestClient (MLflow is mocked)
+
 ### Build processed dataset
 Only needed once, or when raw data changes:
 ```bash
@@ -153,7 +167,7 @@ Open `http://localhost:8501` in your browser. Requires the FastAPI server and ML
 |---------------------|----------|--------|---------------|
 | Logistic Regression | 0.7145   | 0.4766 | 0.8026        |
 | Decision Tree       | 0.6995   | 0.4655 | 0.7965        |
-| **Random Forest**   | **0.7250**| **0.4811** | **0.8063** ← winner |
+| **Random Forest**   | **0.7250**| **0.4811** | **0.8063** |
 | XGBoost             | 0.7072   | 0.4742 | 0.8056        |
 
 All models trained with `class_weight='balanced'` to handle the 84/16 class imbalance.
