@@ -13,6 +13,10 @@ COPY configs/ ./configs/
 # copy the API entrypoint
 COPY api/app.py ./api/app.py
 
+# copy scripts and data (needed for init_db.py)
+COPY scripts/ ./scripts/
+COPY data/ ./data/
+
 EXPOSE 8000
 
 CMD ["uvicorn", "api.app:app", "--host", "0.0.0.0", "--port", "8000"]

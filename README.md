@@ -36,13 +36,16 @@ diabetes_risk_prediction/
 ├── notebooks/
 │   ├── test_notebook.ipynb   # EDA + 4-model comparison
 │   └── test2_notebook.ipynb  # additional experiments
+├── scripts/
+│   └── init_db.py            # one-time script: creates tables + loads features CSV into PostgreSQL
 ├── src/
 │   ├── __init__.py           # makes src/ a Python package
 │   ├── config.py             # YAML loader
 │   ├── data.py               # build_processed_data() + load_data()
 │   ├── preprocess.py         # clean_data() + make_target()
 │   ├── features.py           # engineer_features() — adds BMI_cat
-│   └── evaluate.py           # compute_metrics() — accuracy, F1, ROC AUC
+│   ├── evaluate.py           # compute_metrics() — accuracy, F1, ROC AUC
+│   └── db.py                 # SQLAlchemy engine, Prediction ORM model, session factory
 ├── tests/
 │   ├── __init__.py
 │   ├── test_features.py      # unit tests for bmi_category + engineer_features
@@ -50,7 +53,7 @@ diabetes_risk_prediction/
 │   └── test_api.py           # API contract tests via FastAPI TestClient (MLflow mocked)
 ├── train.py                  # config-driven training + MLflow tracking + auto-registration
 ├── .dvc/                     # DVC config and cache
-├── docker-compose.yml        # all services: MLflow + FastAPI + Streamlit
+├── docker-compose.yml        # all services: PostgreSQL + MLflow + FastAPI + Streamlit
 ├── mlflow_data/              # MLflow DB + artifacts (gitignored, persists across restarts)
 ├── requirements.txt
 ├── .gitignore
@@ -89,12 +92,22 @@ Once running:
 - MLflow UI → `http://localhost:5001` (Experiments + Model Registry)
 - FastAPI docs → `http://localhost:8000/docs`
 - Streamlit app → `http://localhost:8501`
+- PostgreSQL → `localhost:5432` (user: `diabetes`, password: `diabetes`, db: `diabetes_db`)
 
 Data and model artifacts persist in `mlflow_data/` across container restarts.
+PostgreSQL data persists in the `postgres_data` Docker named volume.
 
 > **Note:** Train the model locally at least once (`python3 train.py`) before starting the stack.
 > The API container loads the model from the MLflow registry on startup and will crash if no
 > `@production` model is registered yet.
+
+### Initialise the database (first time only)
+After `docker compose up`, load the processed dataset into PostgreSQL:
+```bash
+docker compose exec api python3 scripts/init_db.py
+```
+This creates the `predictions` table and loads `diabetes_processed.csv` into the `features` table.
+Safe to re-run — `predictions` data is preserved, `features` table is refreshed from CSV.
 
 ### Start MLflow only (for local training)
 If running `train.py` locally without the full Docker stack:

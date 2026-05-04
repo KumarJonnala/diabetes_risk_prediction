@@ -13,7 +13,7 @@ from src.config import load_config
 from src.features import bmi_category
 from src.db import Base, Prediction, get_engine, get_session_factory
 
-# ── startup / shutdown ────────────────────────────────────────────────────────
+# startup / shutdown
 
 engine = None
 SessionLocal = None
@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
     # shutdown: nothing to clean up (engine pool closes automatically)
 
 
-# ── app + model ───────────────────────────────────────────────────────────────
+# app + model
 
 cfg = load_config()
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", cfg["mlflow"]["tracking_uri"]))
@@ -52,7 +52,7 @@ FEATURE_COLUMNS = [
 ]
 
 
-# ── request schema ────────────────────────────────────────────────────────────
+# request schema
 
 class UserInput(BaseModel):
     # binary fields (0/1)
@@ -86,7 +86,7 @@ class UserInput(BaseModel):
         return bmi_category(self.BMI)
 
 
-# ── endpoints ─────────────────────────────────────────────────────────────────
+# endpoints
 
 @app.get("/health")
 def health():

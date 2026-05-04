@@ -14,11 +14,12 @@ Safe to re-run — `predictions` table is not touched,
 
 import sys
 from pathlib import Path
+
+# allow imports from project root (src/, configs/) — must come before src imports
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 import pandas as pd
 from src.db import Base, get_engine
-
-# allow imports from project root (src/, configs/)
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
 PROCESSED_CSV = Path(__file__).resolve().parent.parent / "data" / "diabetes_processed.csv"
