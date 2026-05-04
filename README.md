@@ -19,16 +19,23 @@ Target: predict diabetes risk (binary) from 21 health indicators.
 
 ```
 diabetes_risk_prediction/
+├── api/
+│   ├── app.py                # FastAPI /predict endpoint — loads model from MLflow registry
+│   └── Dockerfile            # API container — copies src/ and configs/ for imports
+├── frontend/
+│   ├── frontend.py           # Streamlit prediction form — calls FastAPI /predict
+│   └── Dockerfile            # Frontend container — installs streamlit + requests
 ├── configs/
-│   └── config.yaml          # model hyperparams, MLflow settings, data paths
+│   └── config.yaml           # model hyperparams, MLflow settings, data paths
 ├── data/
 │   ├── diabetes.csv          # raw dataset (DVC-tracked, not in Git)
 │   ├── diabetes.csv.dvc      # DVC pointer file (in Git)
 │   ├── diabetes_processed.csv# cleaned + feature-engineered (DVC-tracked)
 │   └── diabetes_processed.csv.dvc # DVC pointer file (in Git)
-├── documents/                # reference
+├── documents/                # reference material (gitignored)
 ├── notebooks/
-│   └── test_notebook.ipynb   # EDA + 4-model comparison
+│   ├── test_notebook.ipynb   # EDA + 4-model comparison
+│   └── test2_notebook.ipynb  # additional experiments
 ├── src/
 │   ├── __init__.py           # makes src/ a Python package
 │   ├── config.py             # YAML loader
@@ -36,11 +43,10 @@ diabetes_risk_prediction/
 │   ├── preprocess.py         # clean_data() + make_target()
 │   ├── features.py           # engineer_features() — adds BMI_cat
 │   └── evaluate.py           # compute_metrics() — accuracy, F1, ROC AUC
-├── main.py                   # FastAPI app (in progress)
 ├── train.py                  # config-driven training + MLflow tracking + auto-registration
 ├── .dvc/                     # DVC config and cache
-├── docker-compose.yml        # MLflow tracking server container
-├── mlflow_data/              # MLflow DB + artifacts (gitignored, persists across restarts)
+├── docker-compose.yml        # all services: MLflow + FastAPI + Streamlit
+├── mlflow_data/              # MLflow DB + artifacts
 ├── requirements.txt
 ├── .gitignore
 └── README.md
@@ -63,16 +69,37 @@ pip install -r requirements.txt
 
 ## Running commands
 
-### Start MLflow container
-MLflow runs as a Docker container. Start it before training:
+### Start the full stack
+All three services (MLflow, FastAPI, Streamlit) run via Docker Compose:
 ```bash
-docker compose up -d       # start in background
-docker compose ps          # check it's running
-docker compose down        # stop when done
+docker compose up --build  # first run — builds images and starts all services
+docker compose up          # subsequent runs — reuses cached images
+docker compose down        # stop and remove containers
+docker compose ps          # check running containers
+docker compose logs api    # view logs for a specific service
+docker compose restart api # restart a single service without full teardown
+```
+
+Once running:
+- MLflow UI → `http://localhost:5001` (Experiments + Model Registry)
+- FastAPI docs → `http://localhost:8000/docs`
+- Streamlit app → `http://localhost:8501`
+
+Data and model artifacts persist in `mlflow_data/` across container restarts.
+
+> **Note:** Train the model locally at least once (`python3 train.py`) before starting the stack.
+> The API container loads the model from the MLflow registry on startup and will crash if no
+> `@production` model is registered yet.
+
+### Start MLflow only (for local training)
+If running `train.py` locally without the full Docker stack:
+```bash
+docker compose up mlflow -d   # start MLflow container only
+docker compose down           # stop when done
 ```
 MLflow UI: `http://localhost:5001`
 - **Experiments tab** — all runs, metrics, params, artifacts
-- **Models tab** — registered model versions and their stages (Staging / Production)
+- **Models tab** — registered model versions and their aliases (e.g. `@production`)
 
 Data persists in `mlflow_data/` even after the container stops.
 
@@ -90,7 +117,7 @@ dvc push
 dvc status
 ```
 
-Local remote is stored in `.dvc_remote/` (gitignored). To switch to Garage S3 for CI/CD, update `.dvc/config`.
+Local remote is stored in `.dvc_remote/` (gitignored). To switch to sotorage for CI/CD, update `.dvc/config`.
 
 ### Build processed dataset
 Only needed once, or when raw data changes:
@@ -106,11 +133,17 @@ python3 train.py
 Logs params, metrics, and the model artifact to the MLflow container.
 Also registers the model to the MLflow Model Registry as `DiabetesRiskModel`.
 
-### Start the API
+### Start the API (local, without Docker)
 ```bash
-uvicorn main:app --reload
+uvicorn api.app:app --reload
 ```
-Open `http://127.0.0.1:8000/docs` for the interactive Swagger UI.
+Open `http://127.0.0.1:8000/docs` for the interactive Swagger UI. Requires the MLflow container running first.
+
+### Start the Streamlit frontend (local, without Docker)
+```bash
+streamlit run frontend/frontend.py
+```
+Open `http://localhost:8501` in your browser. Requires the FastAPI server and MLflow container running first.
 
 ---
 
@@ -132,18 +165,18 @@ Primary metric: **ROC AUC** (accuracy misleading on imbalanced data).
 
 | Stage | What it adds                                      | Tool                      | Status      |
 |------:|---------------------------------------------------|---------------------------|-------------|
-| 1     | Data cleaning + feature engineering               | pandas, scikit-learn      | Done     |
-| 2     | Baseline model + evaluation                       | scikit-learn              |  Done     |
-| 3     | Experiment tracking (params, metrics, artifacts)  | MLflow tracking           |  Done     |
-| 4     | Model Registry (version + stage management)       | MLflow registry           |  Done     |
-| 5     | Data versioning                                   | DVC + local/S3 remote     | Done     |
-| 6     | Model serving — `/predict` endpoint               | FastAPI                   |  WIP     |
-| 7     | Frontend — prediction form + result display       | Streamlit → FastAPI       |  Pending  |
-| 8     | MLflow container (local tracking server)          | Docker Compose            | Done     |
-| 9     | Containerise all services (FastAPI + Streamlit)   | Docker Compose            |  Pending  |
-| 10    | CI/CD pipeline                                    | GitLab CI                 |  Pending  |
-| 11    | Feature store                                     | Feast                     |  Pending  |
-| 12    | Monitoring — metrics push                         | Prometheus Pushgateway    |  Pending  |
-| 13    | Monitoring — dashboards                           | Grafana                   |  Pending  |
+| 1     | Data cleaning + feature engineering               | pandas, scikit-learn      |    Done     |
+| 2     | Baseline model + evaluation                       | scikit-learn              |    Done     |
+| 3     | Experiment tracking (params, metrics, artifacts)  | MLflow tracking           |    Done     |
+| 4     | Model Registry (version + stage management)       | MLflow registry           |    Done     |
+| 5     | Data versioning                                   | DVC + local/S3 remote     |    Done     |
+| 6     | Model serving — `/predict` endpoint               | FastAPI                   |    Done     |
+| 7     | Frontend — prediction form + result display       | Streamlit → FastAPI       |    Done     |
+| 8     | MLflow container (local tracking server)          | Docker Compose            |    Done     |
+| 9     | Containerise all services (FastAPI + Streamlit)   | Docker Compose            |    Done     |
+| 10    | CI/CD pipeline                                    | GitHub Actions            |    Pending  |
+| 11    | Feature store                                     | Feast                     |    Pending  |
+| 12    | Monitoring — metrics push                         | Prometheus Pushgateway    |    Pending  |
+| 13    | Monitoring — dashboards                           | Grafana                   |    Pending  |
 
 ---
