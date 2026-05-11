@@ -19,9 +19,12 @@ Target: predict diabetes risk (binary) from 21 health indicators.
 
 ```
 diabetes_risk_prediction/
+├── .github/
+│   └── workflows/
+│       └── ci.yml            # GitHub Actions CI — runs pytest on every push/PR to master
 ├── api/
-│   ├── app.py                # FastAPI /predict endpoint — loads model from MLflow registry
-│   └── Dockerfile            # API container — copies src/ and configs/ for imports
+│   ├── app.py                # FastAPI /predict endpoint — loads model from MLflow registry, logs to PostgreSQL, exposes /metrics
+│   └── Dockerfile            # API container — copies src/, configs/, scripts/, data/
 ├── frontend/
 │   ├── frontend.py           # Streamlit prediction form — calls FastAPI /predict
 │   └── Dockerfile            # Frontend container — installs streamlit + requests
@@ -52,8 +55,8 @@ diabetes_risk_prediction/
 │   ├── test_preprocess.py    # unit tests for clean_data + make_target
 │   └── test_api.py           # API contract tests via FastAPI TestClient (MLflow mocked)
 ├── train.py                  # config-driven training + MLflow tracking + auto-registration
-├── .dvc/                     # DVC config and cache
-├── docker-compose.yml        # all services: PostgreSQL + MLflow + FastAPI + Streamlit
+├── prometheus.yml            # Prometheus scrape config — targets api:8000/metrics every 15s
+├── docker-compose.yml        # all services: PostgreSQL + MLflow + FastAPI + Streamlit + Prometheus + Grafana
 ├── mlflow_data/              # MLflow DB + artifacts (gitignored, persists across restarts)
 ├── requirements.txt
 ├── .gitignore
@@ -78,7 +81,7 @@ pip install -r requirements.txt
 ## Running commands
 
 ### Start the full stack
-All three services (MLflow, FastAPI, Streamlit) run via Docker Compose:
+All services run via Docker Compose:
 ```bash
 docker compose up --build  # first run — builds images and starts all services
 docker compose up          # subsequent runs — reuses cached images
@@ -92,7 +95,9 @@ Once running:
 - MLflow UI → `http://localhost:5001` (Experiments + Model Registry)
 - FastAPI docs → `http://localhost:8000/docs`
 - Streamlit app → `http://localhost:8501`
-- PostgreSQL → `localhost:5432` (user: `diabetes`, password: `diabetes`, db: `diabetes_db`)
+- Prometheus → `http://localhost:9090` (raw metrics + query interface)
+- Grafana → `http://localhost:3000` (dashboards — default login: `admin` / `admin`)
+- PostgreSQL → `localhost:5430` (user: `diabetes`, password: `diabetes`, db: `diabetes_db`)
 
 Data and model artifacts persist in `mlflow_data/` across container restarts.
 PostgreSQL data persists in the `postgres_data` Docker named volume.
@@ -135,7 +140,7 @@ dvc push
 dvc status
 ```
 
-Local remote is stored in `.dvc_remote/` (gitignored). To switch to sotorage for CI/CD, update `.dvc/config`.
+Local remote is stored in `.dvc_remote/` (gitignored). To switch to cloud storage for CI/CD, update `.dvc/config`.
 
 ### Run tests
 ```bash
@@ -145,6 +150,8 @@ python -m pytest tests/ -v
 - `test_features.py` — unit tests for BMI categorisation and feature engineering
 - `test_preprocess.py` — unit tests for data cleaning and target creation
 - `test_api.py` — API contract tests using FastAPI TestClient (MLflow is mocked)
+
+Tests also run automatically on every push and pull request to `master` via GitHub Actions.
 
 ### Build processed dataset
 Only needed once, or when raw data changes:
@@ -171,6 +178,19 @@ Open `http://127.0.0.1:8000/docs` for the interactive Swagger UI. Requires the M
 streamlit run frontend/frontend.py
 ```
 Open `http://localhost:8501` in your browser. Requires the FastAPI server and MLflow container running first.
+
+---
+
+## Monitoring
+
+The API exposes a `/metrics` endpoint (via `prometheus-fastapi-instrumentator`) that Prometheus scrapes every 15 seconds. Metrics include request counts per endpoint, HTTP status code distribution, and response latency histograms.
+
+To set up Grafana dashboards:
+1. Open `http://localhost:3000` (login: `admin` / `admin`)
+2. Add a Prometheus data source -> URL: `http://prometheus:9090`
+3. Create panels using PromQL queries, for example:
+   - `rate(http_requests_total{handler="/predict"}[1m])` — predictions per second
+   - `http_request_duration_seconds_bucket` — latency distribution
 
 ---
 
@@ -201,9 +221,8 @@ Primary metric: **ROC AUC** (accuracy misleading on imbalanced data).
 | 7     | Frontend — prediction form + result display       | Streamlit → FastAPI       |    Done     |
 | 8     | MLflow container (local tracking server)          | Docker Compose            |    Done     |
 | 9     | Containerise all services (FastAPI + Streamlit)   | Docker Compose            |    Done     |
-| 10    | CI/CD pipeline                                    | GitHub Actions            |    Pending  |
+| 10    | CI/CD pipeline                                    | GitHub Actions            |    Done     |
 | 11    | Feature store                                     | Feast                     |    Pending  |
-| 12    | Monitoring — metrics push                         | Prometheus Pushgateway    |    Pending  |
-| 13    | Monitoring — dashboards                           | Grafana                   |    Pending  |
+| 12    | Monitoring — metrics + dashboards                 | Prometheus + Grafana      |    Done     |
 
 ---

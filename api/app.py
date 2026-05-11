@@ -9,6 +9,8 @@ import pandas as pd
 import mlflow
 import mlflow.sklearn
 
+from prometheus_fastapi_instrumentator import Instrumentator
+
 from src.config import load_config
 from src.features import bmi_category
 from src.db import Base, Prediction, get_engine, get_session_factory
@@ -42,6 +44,7 @@ mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", cfg["mlflow"]["tracking
 model = mlflow.sklearn.load_model(f"models:/{cfg['mlflow']['registered_model_name']}@production")
 
 app = FastAPI(lifespan=lifespan)
+Instrumentator().instrument(app).expose(app)
 
 FEATURE_COLUMNS = [
     'HighBP', 'HighChol', 'CholCheck', 'BMI', 'Smoker', 'Stroke',
